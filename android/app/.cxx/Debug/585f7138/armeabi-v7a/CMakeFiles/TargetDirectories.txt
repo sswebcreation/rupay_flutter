@@ -1,0 +1,2 @@
+/Users/snehalbatra/Projects/rupay/android/app/.cxx/Debug/585f7138/armeabi-v7a/CMakeFiles/edit_cache.dir
+/Users/snehalbatra/Projects/rupay/android/app/.cxx/Debug/585f7138/armeabi-v7a/CMakeFiles/rebuild_cache.dir

@@ -1,0 +1,676 @@
+import 'package:bottom_picker/bottom_picker.dart';
+import 'package:bottom_picker/resources/arrays.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import 'package:rotated_corner_decoration/rotated_corner_decoration.dart';
+import 'package:rupay/colors/MyColors.dart';
+import 'package:rupay/controllers/ledger/LedgerController.dart';
+import 'package:rupay/controllers/ledger/MultiLedgerController.dart';
+import 'package:rupay/designer/button/Button.dart';
+import 'package:rupay/models/ledger/LedgerModel.dart';
+import 'package:rupay/services/networking/ApiConstants.dart';
+import 'package:rupay/shared/widgets/CommonWidgets.dart';
+
+class MultiLedger extends StatelessWidget {
+  MultiLedger({ Key? key }) {
+    multiLedgerController.onInit();
+  }
+
+  final MultiLedgerController multiLedgerController =  Get.put<MultiLedgerController>(MultiLedgerController());
+
+  @override
+  Widget build(BuildContext context) {
+    return GetBuilder<MultiLedgerController>(
+      builder: (controller) {
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(
+              "Multi Ledger",
+              style: GoogleFonts.manrope(
+                fontSize: 16.0,
+                color: MyColors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            centerTitle: true,
+            backgroundColor: MyColors.colorSecondary,
+            iconTheme: IconThemeData(
+              color: MyColors.white
+            ),
+            elevation: 0,
+            actions: [
+              GestureDetector(
+                onTap: () {
+                  multiLedgerController.goto("/multiLedgerPDF", arguments: {"ledger" : multiLedgerController.ledgers, "sd" : multiLedgerController.sd, "ed" : multiLedgerController.ed});
+                },
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  child: Icon(
+                      Icons.picture_as_pdf
+                  ),
+                ),
+              )
+            ],
+          ),
+          backgroundColor: MyColors.white,
+          body: NotificationListener(
+            onNotification: (ScrollNotification scrollInfo) {
+              if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
+                print("hello");
+                multiLedgerController.getShowUpdate(multiLedgerController.show.length);
+              }
+              return true;
+            },
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  getDates(context),
+                  horizontalDivider(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        getFilters(context),
+                        getCustomers(context),
+                        getCompanies(context),
+                        // getStatus(context)
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            multiLedgerController.getLedgers();
+                          },
+                          child: standardButton(
+                            context: context,
+                            backgroundColor: MyColors.colorPrimary,
+                            borderColor: MyColors.colorPrimary,
+                            margin: const EdgeInsets.symmetric(vertical: 10),
+                            child: Center(
+                              child: Text(
+                                'SHOW',
+                                style: GoogleFonts.manrope(
+                                  fontSize: 16.0,
+                                  color: MyColors.white,
+                                  letterSpacing: 0,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        // getTotalDesign(),
+                        if(multiLedgerController.ledgers.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            child: TextFormField(
+                              onChanged: (value) {
+                                multiLedgerController.searchLedger();
+                              },
+                              controller: multiLedgerController.search,
+                              style: GoogleFonts.manrope(
+                                fontSize: 16.0,
+                                color: MyColors.black,
+                                letterSpacing: 0,
+                                fontWeight: FontWeight.w400,
+                              ),
+                              decoration: InputDecoration(
+                                  border: OutlineInputBorder(
+                                    borderSide: BorderSide(
+                                      color: MyColors.colorButton,
+                                    ),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  hintText: "Search Ledger",
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                  prefixIcon: const Icon(
+                                      Icons.search
+                                  )
+                              ),
+                            ),
+                          ),
+                        getLedgers()
+                      ],
+                    ),
+                  )
+                ],
+              ),
+            ),
+          )
+        );
+      },
+    );
+  }
+
+
+  Widget getDates(BuildContext context) {
+    return SizedBox(
+      height: 45,
+      child: Row(
+        children: [
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              multiLedgerController.chooseDateFilter(context);
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5.0),
+              child: Row(
+                children: [
+                  Text(
+                    multiLedgerController.selectedDF,
+                    style: GoogleFonts.manrope(
+                      fontSize: 14.0,
+                      color: MyColors.colorSecondary,
+                      letterSpacing: 0,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Icon(
+                    Icons.keyboard_arrow_down,
+                    size: 22,
+                  )
+                ],
+              ),
+            ),
+          ),
+          verticalDivider(),
+          Flexible(
+            child: Row(
+              children: [
+                Flexible(
+                  flex: 1,
+                  fit: FlexFit.tight,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      if(multiLedgerController.selectedDF=="Custom") {
+
+                        BottomPicker.date(
+                          initialDateTime: multiLedgerController.sd,
+                          maxDateTime: DateTime.now(),
+                          pickerTitle: Text(
+                            "Select Start Date",
+                            style: GoogleFonts.manrope(
+                              fontSize: 16.0,
+                              color: MyColors.colorSecondary,
+                              letterSpacing: 0,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          onSubmit: (value) {
+                            if (value != null) {
+                              multiLedgerController.setDate(value, "sd");
+                            }
+                          },
+                          bottomPickerTheme: BottomPickerTheme.plumPlate,
+                          
+                          buttonContent: Text(
+                            "Done",
+                            style: GoogleFonts.manrope(
+                              fontSize: 16.0,
+                              color: MyColors.black,
+                              letterSpacing: 0,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          buttonSingleColor: Colors.transparent,
+                          displaySubmitButton: true,
+                        ).show(context);
+                      }
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Icon(
+                            Icons.calendar_month,
+                            size: 18,
+                          ),
+                          Text(
+                            multiLedgerController.getDateText(multiLedgerController.sd),
+                            style: GoogleFonts.manrope(
+                              fontSize: 14.0,
+                              color: MyColors.black,
+                              letterSpacing: 0,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                verticalDivider(),
+                Flexible(
+                  flex: 1,
+                  fit: FlexFit.tight,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      if(multiLedgerController.selectedDF=="Custom") {
+                        BottomPicker.date(
+                          initialDateTime: multiLedgerController.ed,
+                          minDateTime: multiLedgerController.sd,
+                          pickerTitle: Text(
+                            "Select End Date",
+                            style: GoogleFonts.manrope(
+                              fontSize: 16.0,
+                              color: MyColors.colorSecondary,
+                              letterSpacing: 0,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          onSubmit: (value) {
+                            if (value != null) {
+                              multiLedgerController.setDate(value, "ed");
+                            }
+                          },
+                          bottomPickerTheme: BottomPickerTheme.plumPlate,
+                          
+                          buttonContent: Text(
+                            "Done",
+                            style: GoogleFonts.manrope(
+                              fontSize: 16.0,
+                              color: MyColors.black,
+                              letterSpacing: 0,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          buttonSingleColor: Colors.transparent,
+                          displaySubmitButton: true,
+                        ).show(context);
+                      }
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Icon(
+                            Icons.calendar_month,
+                            size: 18,
+                          ),
+                          Text(
+                            multiLedgerController.getDateText(multiLedgerController.ed),
+                            style: GoogleFonts.manrope(
+                              fontSize: 14.0,
+                              color: MyColors.black,
+                              letterSpacing: 0,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget getFilters(BuildContext context) {
+    return Wrap(
+      spacing: 5,
+      children: List<Widget>.generate(multiLedgerController.filters.length, (int index) {
+        return ChoiceChip(
+          label: Text(multiLedgerController.filters[index]),
+          labelStyle: GoogleFonts.manrope(
+            color: MyColors.colorPrimary,
+            fontSize: 14,
+            fontWeight: FontWeight.w600
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 5),
+          backgroundColor: MyColors.colorPrimary.withOpacity(0.3),
+          selected: false,
+          onSelected: (bool selected) {
+            if(multiLedgerController.filters[index]=="Account") {
+              print(multiLedgerController.getCustomerList(index));
+              multiLedgerController.goto("/account", arguments: {
+                  "title": "${multiLedgerController.filters[index]}s",
+                  "list": multiLedgerController.getCustomerList(index),
+                  "type": ApiConstants.allType
+                }
+              );
+            }
+            else if(multiLedgerController.filters[index]=="Company") {
+              print(multiLedgerController.getCompanyList(index));
+              multiLedgerController.goto("/selectCompany", arguments: {
+                  "title": "Companies",
+                  "list": multiLedgerController.getCompanyList(index),
+                  "type": ApiConstants.allType
+                }
+              );
+            }
+            // setState(() {
+            //   isSelected[index] = selected;
+            // });
+          },
+        );
+      }),
+    );
+  }
+
+  Widget getCustomers(BuildContext context) {
+    return Wrap(
+      spacing: 5,
+      children: List<Widget>.generate(multiLedgerController.customers.length, (int index) {
+        return ChoiceChip(
+          label: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(multiLedgerController.customers[index].NAME),
+              const SizedBox(
+                width: 3,
+              ),
+              Icon(
+                Icons.close,
+                size: 16,
+                color: MyColors.colorDarkSecondary,
+              )
+            ],
+          ),
+          labelStyle: GoogleFonts.manrope(
+            color: MyColors.colorSecondary,
+            fontSize: 12,
+            fontWeight: FontWeight.w700
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 1),
+          backgroundColor: MyColors.colorSecondary.withOpacity(0.3),
+          selected: false,
+          onSelected: (bool selected) {
+            multiLedgerController.removeCustomer(multiLedgerController.customers[index]);
+          },
+        );
+      }),
+    );
+  }
+
+  Widget getCompanies(BuildContext context) {
+    return Wrap(
+      spacing: 5,
+      children: List<Widget>.generate(multiLedgerController.companies.length, (int index) {
+        return ChoiceChip(
+          label: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text("${multiLedgerController.companies[index].NAME} (${multiLedgerController.companies[index].YEAR})"),
+              const SizedBox(
+                width: 3,
+              ),
+              Icon(
+                Icons.close,
+                size: 16,
+                color: MyColors.colorDarkSecondary,
+              )
+            ],
+          ),
+          labelStyle: GoogleFonts.manrope(
+            color: MyColors.colorSecondary,
+            fontSize: 12,
+            fontWeight: FontWeight.w700
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 1),
+          backgroundColor: MyColors.colorSecondary.withOpacity(0.3),
+          selected: false,
+          onSelected: (bool selected) {
+            multiLedgerController.removeCompany(multiLedgerController.companies[index]);
+          },
+        );
+      }),
+    );
+  }
+
+  Widget getLedgers() {
+    double amount = 0;
+    return multiLedgerController.load ?
+    multiLedgerController.loaded==false || multiLedgerController.show.isNotEmpty ? ListView.separated(
+      itemCount: multiLedgerController.show.length,
+      scrollDirection: Axis.vertical,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      separatorBuilder: (BuildContext buildContext, int index) {
+        return const SizedBox(
+          height: 3,
+        );
+      },
+      itemBuilder: (BuildContext buildContext, int index) {
+
+        LedgerModel led = multiLedgerController.show[index];
+        if(index==0) {
+          amount = 0;
+        }
+        else if(led.ACCOUNTCODE!=multiLedgerController.show[index-1].ACCOUNTCODE) {
+          amount = 0;
+        }
+
+        if(led.Amount?.isNegative==true) {
+          amount += (led.Amount??0).abs();
+        }
+        else {
+          amount -= (led.Amount??0).abs();
+        }
+        return getLedgerDesign(index, led, amount);
+      },
+    ) : Container(
+      padding: const EdgeInsets.only(top: 40),
+      alignment: Alignment.center,
+      child: Text(
+        "No Records Found",
+        style: GoogleFonts.manrope(
+            color: MyColors.black,
+            fontSize: 16,
+            fontWeight: FontWeight.w600
+        ),
+      ),
+    )
+    : Container(
+      padding: const EdgeInsets.only(top: 20),
+      alignment: Alignment.center,
+      child: CircularProgressIndicator(
+        color: MyColors.colorPrimary,
+      ),
+    );
+  }
+
+  Widget getLedgerDesign(int index, LedgerModel ledger, double amount) {
+    return GestureDetector(
+      onTap: () {
+        // multiLedgerController.goto("/singleledgerPDF", arguments: ledger.ID);
+      },
+      child: Card(
+        elevation: 10,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+          decoration: BoxDecoration(
+            color: MyColors.white,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          foregroundDecoration: RotatedCornerDecoration.withColor(
+            color: ledger.Amount?.isNegative==true ? MyColors.colorClear : MyColors.colorPending,
+            // spanBaselineShift: 4,
+            badgeSize: const Size(30, 25),
+            badgeCornerRadius: const Radius.circular(5),
+            badgePosition: BadgePosition.topStart,
+            // textSpan: TextSpan(
+            //   text: 'OMG',
+            //   style: TextStyle(
+            //     color: Colors.white,
+            //     fontSize: 12,
+            //     letterSpacing: 1,
+            //     fontWeight: FontWeight.bold,
+            //   ),
+            // ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 15.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "PARTY: ${ledger.ACCOUNTNAME??""}",
+                            style: GoogleFonts.manrope(
+                                color: MyColors.black,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600
+                            ),
+                          ),
+                          Text(
+                            "CHEQUE NO.: ${ledger.ChequeNo??""}",
+                            style: GoogleFonts.manrope(
+                                color: MyColors.black,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                    const SizedBox(
+                      width: 5,
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          "DOC: #${(ledger.DOCNUMBER??"").trim()}",
+                          style: GoogleFonts.manrope(
+                              color: MyColors.colorGrey,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600
+                          ),
+                        ),
+                        Text(
+                          (ledger.DOCNUMBER.toString().trim()!="0") ? DateFormat("dd MMM, yyyy").format(DateTime.parse(ledger.TXNDATE??"")) : "Opening Balance",
+                          style: GoogleFonts.manrope(
+                              color: MyColors.colorGrey,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600
+                          ),
+                        )
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    flex: 1,
+                    fit: FlexFit.tight,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          "DEBIT",
+                          style: GoogleFonts.manrope(
+                              color: MyColors.colorGrey,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600
+                          ),
+                        ),
+                        Text(
+                          ledger.Amount?.isNegative==true ? (ledger.Amount??0).abs().toString() : "",
+                          style: GoogleFonts.manrope(
+                              color: MyColors.black,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                  const SizedBox(
+                    width: 5,
+                  ),
+                  Flexible(
+                    flex: 1,
+                    fit: FlexFit.tight,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          "CREDIT",
+                          style: GoogleFonts.manrope(
+                              color: MyColors.colorGrey,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600
+                          ),
+                        ),
+                        Text(
+                          ledger.Amount?.isNegative==true ? "" : (ledger.Amount??0).abs().toString(),
+                          style: GoogleFonts.manrope(
+                              color: MyColors.black,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                  const SizedBox(
+                    width: 5,
+                  ),
+                  Flexible(
+                    flex: 1,
+                    fit: FlexFit.tight,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          "BALANCE",
+                          style: GoogleFonts.manrope(
+                              color: MyColors.colorGrey,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600
+                          ),
+                        ),
+                        Text(
+                          amount.abs().toString(),
+                          style: GoogleFonts.manrope(
+                              color: MyColors.black,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+
+}

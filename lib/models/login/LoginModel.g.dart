@@ -1,0 +1,29 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'LoginModel.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+_$LoginModelImpl _$$LoginModelImplFromJson(Map<String, dynamic> json) =>
+    _$LoginModelImpl(
+      code: (json['code'] as num).toInt(),
+      status: json['status'] as String,
+      message: json['message'] as String,
+      data: (json['data'] as List<dynamic>?)
+          ?.map((e) => CompanyModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      access_token: json['access_token'] as String?,
+      refresh_token: json['refresh_token'] as String?,
+    );
+
+Map<String, dynamic> _$$LoginModelImplToJson(_$LoginModelImpl instance) =>
+    <String, dynamic>{
+      'code': instance.code,
+      'status': instance.status,
+      'message': instance.message,
+      'data': instance.data,
+      'access_token': instance.access_token,
+      'refresh_token': instance.refresh_token,
+    };
