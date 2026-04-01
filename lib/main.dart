@@ -10,9 +10,8 @@ import 'package:rupay/themes/Themes.dart';
 import 'package:get_storage/get_storage.dart';
 
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-    await Firebase.initializeApp();
+  await Firebase.initializeApp();
 }
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +24,8 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   final ThemesController themeController = Get.put(ThemesController());
+
+  MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {

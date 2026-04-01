@@ -540,7 +540,7 @@ class MultiLISalesPDFController extends GetxController {
           ),
         Table(
           columnWidths: {
-            0: FlexColumnWidth(1.1), // First column takes up 1/3 of the available width
+            0: FlexColumnWidth(1.1),
             1: FlexColumnWidth(0.6),
             2: FlexColumnWidth(2.5),
             3: FlexColumnWidth(0.9),

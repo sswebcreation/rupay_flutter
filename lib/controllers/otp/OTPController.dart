@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:rupay/colors/MyColors.dart';
@@ -9,6 +10,7 @@ import 'package:get/get.dart';
 import 'package:rupay/essential/Essential.dart';
 import 'package:pinput/pinput.dart';
 import 'package:http/http.dart' as http;
+import 'package:rupay/services/networking/ApiConstants.dart';
 
 class OTPController extends GetxController {
   OTPController();
@@ -83,74 +85,56 @@ class OTPController extends GetxController {
   }
 
   String generateOTP(int length) {
-    // Define the characters allowed in the OTP
     const chars = '1234567890';
-
-    // Create a random number generator object
     final math.Random rnd = math.Random();
-
-    // Generate a string of random characters with the desired length
     return String.fromCharCodes(Iterable.generate(length, (_) => chars.codeUnitAt(rnd.nextInt(chars.length))));
   }
 
   getOTP(String message) async {
     generatedOTP = generateOTP(6);
 
-    // if (mobile == '9999999999') {
-    //   sent = true;
-    //   Essential.showSnackBar(message, time: 1);
-    //   update();
-    //   return;
-    // }
+    /// STATIC LOGIN
+    if (mobile == '9999999999') {
+      sent = true;
+      update();
+      await Future.delayed(1.seconds);
+      Essential.showSnackBar(message, time: 1);
+      return;
+    }
 
+    /// GLOBAL SETTING
+    String settingUrl = '${ApiConstants.baseUrl}settings/';
+    var settingRes = await http.get(Uri.parse(settingUrl));
+    debugPrint(settingRes.body.toString());
+    final decoded = jsonDecode(settingRes.body);
+    String instanceId = decoded['data']?['sendbuddy_instance_id'] ?? '';
+    String accessToken = decoded['data']?['sendbuddy_access_token'] ?? '';
+    String apiKey = decoded['data']?['flashb_api_key'] ?? '';
+
+    /// WHATSAPP SMS
     if (fromWhatsapp) {
-      String text =
-          'Your RuPay Application OTP is *${generatedOTP}* Kindly login with this OTP.\nPlease keep it confidential.\n*Thank you*.';
+      String text = 'Your RuPay Application OTP is *$generatedOTP* Kindly login with this OTP.\nPlease keep it confidential.\n*Thank you*.';
       String url =
-          'https://sendbuddy.in/api/send?number=${code.substring(1)}${mobile}&type=media&message=${Uri.encodeComponent(text)}&instance_id=665EB55F4C6F8&access_token=660d56ed3205e';
-      print(url);
+          'https://aa.sendbuddy.in/api/send?number=${code.substring(1)}$mobile&type=media&message=${Uri.encodeComponent(text)}&instance_id=$instanceId&access_token=$accessToken';
+      debugPrint(url);
       var res = await http.get(Uri.parse(url));
-      print(res);
+      debugPrint(res.body.toString());
       sent = true;
       Essential.showSnackBar(message, time: 1);
       update();
       return;
     }
 
-    /// LOGIN WITH OTP
+    /// TEXT SMS
     String text = 'Your%20OTP%20Code%20is%20$generatedOTP%20FROM%20RuPay%20-%20FLASHB';
-    String url = 'https://sms.mobileadz.in/api/push?apikey=66fe8bd445279&sender=FLASHB&mobileno=${mobile}&text=$text';
+    String url = 'https://sms.mobileadz.in/api/push?apikey=$apiKey&sender=FLASHB&mobileno=${mobile}&text=$text';
+    debugPrint(url);
     var res = await http.get(Uri.parse(url));
-    debugPrint(res.body.toString());
+    debugPrint(res.body);
     sent = true;
     Essential.showSnackBar(message, time: 1);
     update();
     return;
-    // Firebase Code
-    // await auth.verifyPhoneNumber(
-    //   phoneNumber: '$code$mobile',
-    //   verificationCompleted: (PhoneAuthCredential credential) async {
-    //     print("verified");
-    //   },
-    //   codeSent: (String verificationId, int? forceResendingToken) async {
-    //     print("code sent");
-    //     verificationIDReceived = verificationId;
-    //     sent = true;
-    //     Essential.showSnackBar(message, time: 1);
-    //     update();
-    //   },
-    //   codeAutoRetrievalTimeout: (String verificationId) {
-    //     print("auto retrieval");
-    //     verificationIDReceived = verificationId;
-    //     // Essential.showSnackBar("Time Out", time: 1);
-    //     update();
-    //   },
-    //   verificationFailed: (FirebaseAuthException error) {
-    //     print("failedddd");
-    //     print(error.toString());
-    //     Essential.showSnackBar(error.toString(), time: 1);
-    //   },
-    // );
   }
 
   void resendOTP() {
@@ -186,11 +170,7 @@ class OTPController extends GetxController {
         Get.back(result: "verified");
         return null;
       } else {
-        Get.snackbar("", "Invalid OTP",
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: MyColors.black,
-            margin: const EdgeInsets.all(5),
-            colorText: MyColors.white);
+        Get.snackbar("", "Invalid OTP", snackPosition: SnackPosition.BOTTOM, backgroundColor: MyColors.black, margin: const EdgeInsets.all(5), colorText: MyColors.white);
       }
     }
     return null;

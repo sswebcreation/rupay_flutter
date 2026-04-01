@@ -32,8 +32,8 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace "com.ss.rupay"
-    compileSdkVersion flutter.compileSdkVersion
-    ndkVersion = "27.0.12077973"
+    compileSdkVersion 36
+    ndkVersion = "28.0.12674087"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
@@ -51,7 +51,7 @@ android {
     defaultConfig {
         applicationId "com.ss.rupay"
         minSdkVersion flutter.minSdkVersion
-        targetSdkVersion flutter.targetSdkVersion
+        targetSdkVersion 35
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         multiDexEnabled true

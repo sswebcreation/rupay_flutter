@@ -35,9 +35,8 @@ class LoginController extends GetxController {
 
   void validate({fromWhatsapp = false}) {
     if (formKey.currentState!.validate()) {
-      /// BYPASS
-      // verify(fromWhatsapp: fromWhatsapp);
-      login();
+      // login();   /// BYPASS
+      verify(fromWhatsapp: fromWhatsapp);
     }
   }
 
@@ -64,23 +63,19 @@ class LoginController extends GetxController {
       os = "ANDROID";
 
       AndroidDeviceInfo androidDeviceInfo = await Essential.getAndroidDeviceInfo();
-      print(
-          "---------------------------------------------------------androidDeviceInfo---------------------------------------------------------");
+      print("---------------------------------------------------------androidDeviceInfo---------------------------------------------------------");
       imei = androidDeviceInfo.id;
       model = "${androidDeviceInfo.brand} ${androidDeviceInfo.model}";
-      print(
-          "---------------------------------------------------------androidDeviceInfo---------------------------------------------------------");
+      print("---------------------------------------------------------androidDeviceInfo---------------------------------------------------------");
     } else if (Platform.isIOS) {
       os = "IOS";
 
       IosDeviceInfo iosDeviceInfo = await Essential.getIOSDeviceInfo();
-      print(
-          "---------------------------------------------------------iosDeviceInfo---------------------------------------------------------");
+      print("---------------------------------------------------------iosDeviceInfo---------------------------------------------------------");
       imei = iosDeviceInfo.identifierForVendor ?? "";
       print(iosDeviceInfo.utsname.machine ?? "");
       model = "${CommonConstants.iPhoneModels[iosDeviceInfo.utsname.machine ?? ""] ?? ""} ${iosDeviceInfo.name ?? ""}";
-      print(
-          "---------------------------------------------------------iosDeviceInfo---------------------------------------------------------");
+      print("---------------------------------------------------------iosDeviceInfo---------------------------------------------------------");
     }
 
     final Map<String, String> data = {
